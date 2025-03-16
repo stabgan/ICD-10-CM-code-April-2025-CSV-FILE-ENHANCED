@@ -26,10 +26,8 @@ The ICD-10-CM/PCS order files are provided by the CDC and contain a unique order
 
 ```
 .
-├── icd_10_cm_data
-│   └── icd10cm-order-April-2025.txt  # Source order file from CDC
-├── processed_data
-│   └── icd10cm_data.csv              # Generated CSV with valid codes
+├── icd10cm-order-April-2025.txt  # Source order file from CDC
+├── icd10cm_data.csv              # Generated CSV with valid codes
 ├── icd10_converter.py                # Main Python script for processing
 └── README.md                         # This file
 ```
@@ -50,7 +48,7 @@ The ICD-10-CM/PCS order files are provided by the CDC and contain a unique order
    - Writes the processed data into a CSV file.
 
 3. **Output File**  
-   The output is a CSV file (`icd10cm_data.csv`) saved in the `processed_data/` directory, containing two columns: `code` and `description`.
+   The output is a CSV file (`icd10cm_data.csv`), containing two columns: `code` and `description`.
 
 ---
 
@@ -59,7 +57,6 @@ The ICD-10-CM/PCS order files are provided by the CDC and contain a unique order
 ### Prerequisites
 
 - Python 3.6 or higher
-- Dependencies (listed in `requirements.txt`, if applicable):
   - `pandas` (used in the unused `parse_order_file` function)
 
 ### Installation
@@ -78,18 +75,6 @@ The ICD-10-CM/PCS order files are provided by the CDC and contain a unique order
    pip install -r requirements.txt
    ```
 
-### Usage
-
-1. Place the downloaded ICD-10-CM order file (`icd10cm-order-April-2025.txt`) inside the `icd_10_cm_data/` folder.
-2. Run the script:
-
-   ```
-   python your_script.py
-   ```
-
-3. The processed CSV file will be generated in the `processed_data/` directory.
-
----
 
 ## Source and Acknowledgments
 
