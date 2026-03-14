@@ -1,78 +1,98 @@
-import pandas as pd
-import os
+"""
+ICD-10-CM April 2025 Order File → CSV Converter
+
+Parses the fixed-width CDC order file and produces a clean CSV
+containing only valid diagnosis codes with enhanced descriptions.
+"""
+
 import csv
 from pathlib import Path
 
-def parse_order_file(file_path):
+import pandas as pd
+
+
+def parse_order_file(file_path: str | Path) -> pd.DataFrame:
     """
-    Parse the ICD-10-CM order file according to the specification.
+    Parse the ICD-10-CM order file and return *all* rows (headers + valid codes)
+    as a DataFrame.  Useful for exploratory analysis.
     """
-    data = []
-    with open(file_path, 'r', encoding='utf-8') as file:
-        for line in file:
+    file_path = Path(file_path)
+    records: list[dict[str, str]] = []
+
+    with file_path.open(encoding="utf-8") as fh:
+        for line in fh:
             if len(line.strip()) == 0:
                 continue
             code = line[6:13].strip()
-            long_desc = line[77:].strip()
-            data.append({
-                'code': code,
-                'description': long_desc
-            })
-    return pd.DataFrame(data)
+            is_header = line[14] == "0"
+            long_desc = line[77:].strip() if len(line) > 77 else line[16:76].strip()
+            records.append(
+                {
+                    "code": code,
+                    "is_header": is_header,
+                    "description": long_desc,
+                }
+            )
 
-def process_order_file(file_path, output_csv_path):
+    return pd.DataFrame(records)
+
+
+def process_order_file(file_path: str | Path, output_csv_path: str | Path) -> None:
     """
-    Process the ICD-10-CM order file and write valid codes to CSV with header information.
-    Output only code and optimized description.
+    Process the ICD-10-CM order file and write valid codes to CSV
+    with parent-header context baked into each description.
     """
-    with open(file_path, 'r', encoding='utf-8') as file, open(output_csv_path, 'w', newline='', encoding='utf-8') as csv_file:
-        csv_writer = csv.writer(csv_file)
-        # Write simplified header row with only code and description
-        csv_writer.writerow(['code', 'description'])
-        
-        last_header_code = ""    
+    file_path = Path(file_path)
+    output_csv_path = Path(output_csv_path)
+
+    with (
+        file_path.open(encoding="utf-8") as fh,
+        output_csv_path.open("w", newline="", encoding="utf-8") as csv_file,
+    ):
+        writer = csv.writer(csv_file)
+        writer.writerow(["code", "description"])
+
+        last_header_code = ""
         last_header_long_desc = ""
-        
-        for line in file:
+
+        for line in fh:
             if len(line) < 78:
-                continue  # Skip malformed lines
-                
+                continue  # skip malformed lines
+
             code = line[6:13].strip()
             is_valid = line[14]
-            long_description = line[77:].strip() if len(line) > 77 else line[16:76].strip()
-            
-            # If this is a header, update the last header info
-            if is_valid == '0':
+            long_description = (
+                line[77:].strip() if len(line) > 77 else line[16:76].strip()
+            )
+
+            if is_valid == "0":
                 last_header_code = code
                 last_header_long_desc = long_description
-                continue  # Skip writing header to output
-            
-            # For valid codes, format the description with header at beginning
-            if is_valid == '1':
-                enhanced_desc = f"Header: {last_header_code} - {last_header_long_desc} | Specific long description about this code: {long_description}"
-                csv_writer.writerow([code, enhanced_desc])
+                continue
 
-def main():
-    # Set file paths
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_dir = os.path.join(script_dir, 'icd_10_cm_data')
-    order_file_path = os.path.join(data_dir, 'icd10cm-order-April-2025.txt')
-    output_path = os.path.join(script_dir, 'processed_data/icd10cm_data.csv')
-    
-    # Check if order file exists
-    if not os.path.exists(order_file_path):
+            if is_valid == "1":
+                enhanced_desc = (
+                    f"Header: {last_header_code} - {last_header_long_desc} "
+                    f"| Specific long description about this code: {long_description}"
+                )
+                writer.writerow([code, enhanced_desc])
+
+
+def main() -> None:
+    script_dir = Path(__file__).resolve().parent
+    order_file_path = script_dir / "icd10cm-order-April-2025.txt"
+    output_path = script_dir / "icd10cm_data.csv"
+
+    if not order_file_path.exists():
         print(f"Error: Order file not found at {order_file_path}")
         return
-    
-    # Create output directory if needed
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    
-    # Process and save file
+
     print(f"Processing order file: {order_file_path}")
     process_order_file(order_file_path, output_path)
-    
+
     print(f"Conversion complete. Output saved to: {output_path}")
     print("Only valid codes with optimized descriptions are included in the output.")
+
 
 if __name__ == "__main__":
     main()
