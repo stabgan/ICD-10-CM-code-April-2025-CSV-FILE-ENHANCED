@@ -8,7 +8,7 @@ Ready-to-use CSV of every valid ICD-10-CM diagnosis code from the April 2025 rel
 
 ## What It Does
 
-The CDC publishes ICD-10-CM codes as a fixed-width text file mixing header rows and valid codes. This project parses that file and produces a single, clean CSV where every row is a valid diagnosis code with its parent category already included in the description — no extra lookups needed.
+The CDC publishes ICD-10-CM codes as a fixed-width text file that mixes header rows and billable codes. This project parses that file and produces a single, clean CSV where every row is a valid diagnosis code with its parent category already included in the description — no extra lookups needed.
 
 ## Dataset
 
@@ -19,7 +19,7 @@ The CDC publishes ICD-10-CM codes as a fixed-width text file mixing header rows 
 | Columns | `code`, `description` |
 | Release | April 2025 |
 
-### Columns
+### Column Reference
 
 | Column | Type | Example |
 |---|---|---|
@@ -47,10 +47,21 @@ print(df.head())
 ### Regenerate from source
 
 ```bash
+# default paths (reads/writes next to the script)
 python icd10_converter.py
+
+# custom paths
+python icd10_converter.py -i /path/to/order.txt -o /path/to/output.csv
 ```
 
-Reads `icd10cm-order-April-2025.txt` and writes `icd10cm_data.csv` in the same directory.
+### CLI Options
+
+```
+usage: icd10_converter.py [-h] [-i INPUT] [-o OUTPUT]
+
+  -i, --input   Path to the order .txt file (default: icd10cm-order-April-2025.txt)
+  -o, --output  Path for the output CSV      (default: icd10cm_data.csv)
+```
 
 ## Repository Contents
 
@@ -60,19 +71,31 @@ Reads `icd10cm-order-April-2025.txt` and writes `icd10cm_data.csv` in the same d
 | `icd10cm-order-April-2025.txt` | Raw CDC fixed-width order file |
 | `icd10_converter.py` | Python converter script |
 | `icd10-Order-Files-April-2025.pdf` | Official CDC file-format specification |
+| `requirements.txt` | Python dependencies |
 
 ## Source
 
 [CDC ICD-10-CM Order Files — April 2025 Update](https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Publications/ICD10CM/2025-Update/)
 
-## Tech Stack
+## 🛠 Tech Stack
 
 | | Tool | Purpose |
 |---|---|---|
 | 🐍 | Python 3.10+ | Script runtime |
-| 🐼 | pandas | DataFrame utilities |
+| 🐼 | pandas ≥ 2.0 | DataFrame utilities in `parse_order_file()` |
 | 📄 | csv (stdlib) | CSV writing |
-| 🗂️ | pathlib (stdlib) | Path handling |
+| 🗂️ | pathlib (stdlib) | Cross-platform path handling |
+| ⌨️ | argparse (stdlib) | CLI argument parsing |
+
+## Installation
+
+```bash
+pip install -r requirements.txt
+```
+
+## ⚠️ Known Issues
+
+- The converter assumes the CDC fixed-width format documented in `icd10-Order-Files-April-2025.pdf`. Future CDC releases may change column positions.
 
 ## License
 
