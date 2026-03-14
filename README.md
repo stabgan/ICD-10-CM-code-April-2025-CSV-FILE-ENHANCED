@@ -1,103 +1,69 @@
-# ICD-10-CM/PCS Order Files Parser
+# ICD-10-CM April 2025 — Enhanced CSV Dataset
 
-This repository contains a Python script that processes the ICD-10-CM/PCS Order Files for FY2025. The script reads the order file, extracts valid codes along with their enhanced descriptions (by combining header and specific code details), and outputs a clean CSV file.
+Ready-to-use CSV of every valid ICD-10-CM diagnosis code (April 2025 release) with parent-category context baked into each row.
 
-If you find this project helpful, please ⭐ star the repo!
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
----
+## What's in the box
 
-## Overview
+| File | Description |
+|---|---|
+| `icd10cm_data.csv` | **74,260 valid codes** with enhanced descriptions (~14 MB) |
+| `icd10cm-order-April-2025.txt` | Raw CDC order file (source of truth) |
+| `icd10_converter.py` | Python script that produced the CSV |
+| `icd10-Order-Files-April-2025.pdf` | Official CDC file-format spec |
 
-The ICD-10-CM/PCS order files are provided by the CDC and contain a unique order number for each code or header. The files include a flag that indicates whether a line represents a valid code or a header. This project uses the [ICD-10-CM/PCS Order Files for April 2025](https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Publications/ICD10CM/2025-Update/) as its source.
+## How the data was enhanced
 
-### What the Script Does
+The raw CDC order file mixes header rows (category-level) and valid-code rows in a flat text format with fixed-width columns. The converter script:
 
-- **Reads** the input order file (e.g., `icd10cm-order-April-2025.txt`).
-- **Extracts**:
-  - **Code**: From a specific position in each line.
-  - **Header Information**: Stored from lines marked as headers.
-  - **Long Description**: From the designated part of the line.
-- **Processes** valid codes by combining the header details with their specific long descriptions.
-- **Outputs** a CSV file (`icd10cm_data.csv`) containing only valid codes with optimized descriptions.
+1. Parses each line by character position per the CDC spec.
+2. Tracks the most recent header (flag `0`) as context.
+3. For every valid code (flag `1`), prepends the parent header code + description to the code's own long description.
 
----
+This means each CSV row is **self-contained** — you don't need to look up the parent category separately.
 
-## Repository Structure
+## CSV schema
 
 ```
-.
-├── icd10cm-order-April-2025.txt  # Source order file from CDC
-├── icd10cm_data.csv              # Generated CSV with valid codes
-├── icd10_converter.py                # Main Python script for processing
-└── README.md                         # This file
+code,description
 ```
 
----
+| Column | Type | Example |
+|---|---|---|
+| `code` | `string` | `A0100` |
+| `description` | `string` | `Header: A010 - Typhoid fever \| Specific long description about this code: Typhoid fever, unspecified` |
 
-## How It Works
+The `description` field follows the pattern:
 
-1. **Input File**  
-   The script reads an order file that includes ICD-10 codes, headers, and descriptions.  
-   - **Header Lines**: Identified by a flag (`0`) and used to store common information.
-   - **Valid Code Lines**: Identified by a flag (`1`), then enhanced by appending the relevant header's details.
+```
+Header: <parent_code> - <parent_description> | Specific long description about this code: <code_description>
+```
 
-2. **Processing Steps**  
-   - Skips any malformed lines.
-   - Extracts code and description using fixed character positions based on the file specification.
-   - Combines header information with each valid code's specific long description.
-   - Writes the processed data into a CSV file.
+## Quick start
 
-3. **Output File**  
-   The output is a CSV file (`icd10cm_data.csv`), containing two columns: `code` and `description`.
+### Use the CSV directly
 
----
+```python
+import pandas as pd
 
-## Getting Started
+df = pd.read_csv("icd10cm_data.csv")
+print(df.shape)        # (74260, 2)
+print(df.head())
+```
 
-### Prerequisites
+### Regenerate from source
 
-- Python 3.6 or higher
-  - `pandas` (used in the unused `parse_order_file` function)
+```bash
+python icd10_converter.py
+```
 
-### Installation
+Requires Python 3.6+ and `pandas`. Reads `icd10cm-order-April-2025.txt` and writes `icd10cm_data.csv`.
 
-1. **Clone the Repository:**
+## Data source
 
-   ```
-   git clone https://github.com/stabgan/ICD-10-CM-code-April-2025-CSV-FILE-ENHANCED.git
-   cd your_repo
-   ```
-
-2. **Install Dependencies:**
-
-   If you have a `requirements.txt`, run:
-   ```
-   pip install -r requirements.txt
-   ```
-
-
-## Source and Acknowledgments
-
-- **Source Data:**  
-  The ICD-10-CM/PCS Order Files for FY2025 were downloaded from the [CDC FTP site](https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Publications/ICD10CM/2025-Update/).
-
-- **Documentation:**  
-  For detailed specifications of the file format, refer to the included [icd10-Order-Files-April-2025.pdf](icd10-Order-Files-April-2025.pdf).
-
----
-
-## Contributing
-
-Contributions are welcome! If you have ideas for improvements or bug fixes, please open an issue or submit a pull request.
-
----
-
-## Star the Repo!
-
-If you found this project helpful, please give it a star on GitHub. Your support is greatly appreciated!
-
----
+[CDC ICD-10-CM Order Files — April 2025 Update](https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Publications/ICD10CM/2025-Update/)
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE).
